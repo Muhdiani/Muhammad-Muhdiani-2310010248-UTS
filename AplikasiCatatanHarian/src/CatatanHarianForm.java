@@ -12,13 +12,11 @@ import controller.ImportHandler;
 
 public class CatatanHarianForm extends javax.swing.JFrame {
 private DatabaseHandler dbHandler;
-    
     private int selectedNoteId = -1;
     private ButtonGroup exportButtonGroup; // Variabel untuk mengelompokkan radio button
     private ExportHandler exportHandler;
     private ImportHandler importHandler;
-    
-    
+
     public CatatanHarianForm() {
         initComponents();
         
@@ -26,99 +24,125 @@ private DatabaseHandler dbHandler;
         dbHandler = new DatabaseHandler();
         dbHandler.createNewTable();
         
+        // Set tanggal JCalendar ke hari ini (Memperbaiki bug tampilan)
         jCalendarInput.setDate(new Date());
         
+        // Inisialisasi Handlers
         exportHandler = new ExportHandler();
         importHandler = new ImportHandler(dbHandler);
+        
         // 2. Kelompokkan Radio Button
         setupRadioButtons();
         
-        // 3. Memuat catatan saat form pertama kali dibuka
-        loadNotesToTable();
+        // 3. Set model ComboBox Waktu (jika belum di initComponents)
+        jComboBoxOrderWaktu.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Semua Waktu", "5 hari terakhir", "10 hari terakhir", "15 hari terakhir", "20 hari terakhir" }));
         
-        jComboBoxOrderWaktu.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "5 hari terakhir", "10 hari terakhir", "15 hari terakhir", "20 hari terakhir" }));
-        
-    jComboBoxOrderWaktu.addActionListener(new java.awt.event.ActionListener() {
-    public void actionPerformed(java.awt.event.ActionEvent evt) {
-        // Panggil fungsi refresh tabel setiap kali ComboBox diubah
-        loadNotesToTable(); 
-    }
+        // 4. Tambahkan listener ke ComboBox Waktu (FIXED: Memanggil loadNotesToTable)
+        jComboBoxOrderWaktu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                // Panggil fungsi refresh tabel setiap kali ComboBox diubah
+                loadNotesToTable(); 
+            }
         });
+        
+        // 5. Memuat catatan saat form pertama kali dibuka (FIXED: Panggilan ditambahkan)
+        loadNotesToTable();
     }
-    
-    private void setupRadioButtons() {
-    exportButtonGroup = new ButtonGroup();
-
-    exportButtonGroup.add(jRadioButtonConvertTxt);
-    exportButtonGroup.add(jRadioButtonConvertCsv);
-    // Set default selection
-
-}
     
     /**
- * Mengambil semua catatan dari database dan mengisi JTable.
- */
-private void loadNotesToTable() {
-    // Ambil nilai filter saat ini dari ComboBox
-    int days = getSelectedFilterDays(); 
-    loadNotesToTable(days); 
-}
+     * Mengelompokkan Radio Button dan mengatur default.
+     */
+    private void setupRadioButtons() {
+        exportButtonGroup = new ButtonGroup();
 
-/**
- * Metode utama untuk mengambil dan menampilkan data ke JTable.
- * @param days Jumlah hari ke belakang untuk filter (0 = semua).
- */
-private void loadNotesToTable(int days) {
-    // 1. Ambil data dari database menggunakan metode filter
-    List<Note> noteList = dbHandler.getFilteredNotes(days);
+        exportButtonGroup.add(jRadioButtonConvertTxt);
+        exportButtonGroup.add(jRadioButtonConvertCsv);
+        // Set default selection
+        jRadioButtonConvertTxt.setSelected(true);
+    }
+
+    /**
+     * Metode utama untuk me-refresh/memuat ulang data ke JTable.
+     * Ini adalah satu-satunya method yang harus dipanggil untuk me-refresh tabel.
+     */
+    private void loadNotesToTable() {
+        searchAndLoadNotes();
+    }
     
-    // 2. Siapkan model tabel dengan nama kolom yang benar
-    DefaultTableModel model = new DefaultTableModel(
-        new Object[]{"ID", "Tanggal", "Kategori", "Isi Catatan"}, 0
-    ) {
-        // Membuat kolom ID tidak bisa diedit
-        @Override
-        public boolean isCellEditable(int row, int column) {
-           return false;
-        }
-    };
-    
-    // 3. Isi model dengan data dari List<Note>
-    for (Note note : noteList) {
-        // Tampilkan cuplikan konten di tabel agar tidak terlalu panjang
-        String snippet = note.getContent().substring(0, Math.min(note.getContent().length(), 70)); 
-        if (note.getContent().length() > 70) snippet += " ...";
+    /**
+     * Mengambil filter waktu dan keyword, lalu memuat data ke JTable.
+     */
+    private void searchAndLoadNotes() {
+        String keyword = jTextFieldCari.getText().trim();
+        int days = getSelectedFilterDays(); // Memanggil method helper
         
-        model.addRow(new Object[]{
-            note.getId(),
-            note.getDate().toLocalDate().toString(), // Hanya tanggal
-            note.getCategory(),
-            snippet
-        });
+        // 1. Ambil data dari database menggunakan metode search
+        List<Note> noteList = dbHandler.searchNotes(days, keyword); 
+        
+        // 2. Tampilkan hasil di JTable
+        displayNotesInTable(noteList);
     }
     
-    // 4. Setel model ke JTable
-    jTableCatatan.setModel(model);
-    
-    // 5. Sembunyikan kolom ID (kolom 0)
-    jTableCatatan.getColumnModel().getColumn(0).setMinWidth(0);
-    jTableCatatan.getColumnModel().getColumn(0).setMaxWidth(0);
-    jTableCatatan.getColumnModel().getColumn(0).setWidth(0);
-}
+    /**
+     * Menampilkan List<Note> hasil query ke dalam JTable.
+     * @param noteList Daftar catatan yang akan ditampilkan.
+     */
+    private void displayNotesInTable(List<Note> noteList) {
+        // 1. Siapkan model tabel dengan nama kolom yang benar
+        DefaultTableModel model = new DefaultTableModel(
+            new Object[]{"ID", "Tanggal", "Kategori", "Isi Catatan"}, 0
+        ) {
+            // Membuat kolom ID tidak bisa diedit
+            @Override
+            public boolean isCellEditable(int row, int column) {
+               return false;
+            }
+        };
+        
+        // 2. Isi model dengan data dari List<Note>
+        for (Note note : noteList) {
+            String snippet = note.getContent().substring(0, Math.min(note.getContent().length(), 70)); 
+            if (note.getContent().length() > 70) snippet += " ...";
+            
+            model.addRow(new Object[]{
+                note.getId(),
+                note.getDate().toLocalDate().toString(), // Hanya tanggal
+                note.getCategory(),
+                snippet
+            });
+        }
+        
+        // 3. Setel model ke JTable
+        jTableCatatan.setModel(model);
+        
+        // 4. Sembunyikan kolom ID (kolom 0)
+        jTableCatatan.getColumnModel().getColumn(0).setMinWidth(0);
+        jTableCatatan.getColumnModel().getColumn(0).setMaxWidth(0);
+        jTableCatatan.getColumnModel().getColumn(0).setWidth(0);
+    }
 
+    /**
+     * (METHOD BARU YANG HILANG)
+     * Mengambil nilai integer (jumlah hari) dari ComboBox filter.
+     * @return Jumlah hari ke belakang. 0 jika "Semua Waktu" atau gagal parsing.
+     */
     private int getSelectedFilterDays() {
-    String selectedItem = (String) jComboBoxOrderWaktu.getSelectedItem();
-    if (selectedItem == null || selectedItem.toLowerCase().contains("semua")) return 0; // Tambahkan kondisi 'semua'
+        String selectedItem = (String) jComboBoxOrderWaktu.getSelectedItem();
+        if (selectedItem == null || selectedItem.toLowerCase().contains("semua")) {
+            return 0;
+        }
 
-    // Contoh: "5 hari terakhir" -> 5
-    try {
-        String numberPart = selectedItem.split(" ")[0];
-        return Integer.parseInt(numberPart);
-    } catch (Exception e) {
-        System.err.println("Gagal parsing filter ComboBox: " + e.getMessage());
-        return 0; // Kembalikan 0 (ambil semua) jika gagal parsing
+        // Contoh: "5 hari terakhir" -> 5
+        try {
+            String numberPart = selectedItem.split(" ")[0];
+            return Integer.parseInt(numberPart);
+        } catch (Exception e) {
+            System.err.println("Gagal parsing filter ComboBox: " + e.getMessage());
+            return 0; // Kembalikan 0 (ambil semua) jika gagal parsing
+        }
     }
-}
+    
+    
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -147,6 +171,8 @@ private void loadNotesToTable(int days) {
         jComboBoxOrderWaktu = new javax.swing.JComboBox<>();
         jRadioButtonConvertTxt = new javax.swing.JRadioButton();
         jRadioButtonConvertCsv = new javax.swing.JRadioButton();
+        jButtonCari = new javax.swing.JButton();
+        jTextFieldCari = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -226,50 +252,66 @@ private void loadNotesToTable(int days) {
 
         jRadioButtonConvertCsv.setText(".CSV");
 
+        jButtonCari.setText("CARI");
+        jButtonCari.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonCariActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(226, 226, 226)
-                .addComponent(jLabel1)
-                .addGap(177, 177, 177)
-                .addComponent(jButtonKeluar)
-                .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(jButtonExport)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jButtonImport)
-                .addGap(9, 9, 9))
-            .addGroup(jPanel1Layout.createSequentialGroup()
                 .addGap(19, 19, 19)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 464, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
+                        .addComponent(jButtonTambah)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButtonEdit)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButtonHapus)
+                        .addGap(0, 65, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1))
+                .addGap(18, 18, 18)
+                .addComponent(jCalendarInput, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(27, 27, 27))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGap(0, 0, Short.MAX_VALUE)
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 464, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
+                        .addComponent(jButtonExport)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jButtonImport)
+                        .addGap(9, 9, 9))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jRadioButtonConvertCsv)
-                            .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                                .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.Alignment.TRAILING, 0, 150, Short.MAX_VALUE)
-                                .addComponent(jComboBoxKategori, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addComponent(jRadioButtonConvertTxt))
-                        .addContainerGap())
+                        .addGap(109, 109, 109))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jLabel2)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(jPanel1Layout.createSequentialGroup()
-                                .addComponent(jButtonTambah)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButtonEdit)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jButtonHapus)
-                                .addGap(0, 65, Short.MAX_VALUE))
-                            .addComponent(jScrollPane1))
-                        .addGap(18, 18, 18)
-                        .addComponent(jCalendarInput, javax.swing.GroupLayout.PREFERRED_SIZE, 207, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(27, 27, 27))))
+                            .addComponent(jComboBoxKategori, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addContainerGap())))
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(226, 226, 226)
+                        .addComponent(jLabel1)
+                        .addGap(177, 177, 177)
+                        .addComponent(jButtonKeluar))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addGap(29, 29, 29)
+                        .addComponent(jButtonCari)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(jTextFieldCari, javax.swing.GroupLayout.PREFERRED_SIZE, 290, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -283,28 +325,34 @@ private void loadNotesToTable(int days) {
                     .addComponent(jCalendarInput, javax.swing.GroupLayout.DEFAULT_SIZE, 156, Short.MAX_VALUE)
                     .addComponent(jLabel2)
                     .addComponent(jScrollPane1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jButtonTambah)
-                    .addComponent(jButtonEdit)
-                    .addComponent(jButtonHapus))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jButtonExport)
-                            .addComponent(jButtonImport)))
+                            .addComponent(jButtonTambah)
+                            .addComponent(jButtonEdit)
+                            .addComponent(jButtonHapus)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(jComboBoxKategori, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(88, 88, 88)
-                        .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(109, 109, 109)
-                        .addComponent(jRadioButtonConvertTxt)
+                        .addGap(58, 58, 58)
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(jButtonCari)
+                            .addComponent(jTextFieldCari, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jRadioButtonConvertCsv)))
-                .addContainerGap())
+                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addComponent(jComboBoxKategori, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(69, 69, 69)
+                                .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(63, 63, 63)
+                                .addComponent(jRadioButtonConvertTxt)
+                                .addGap(18, 18, 18)
+                                .addComponent(jRadioButtonConvertCsv)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(jButtonExport)
+                                    .addComponent(jButtonImport))))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -506,6 +554,10 @@ String format = "";
     }
     }//GEN-LAST:event_jButtonKeluarActionPerformed
 
+    private void jButtonCariActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCariActionPerformed
+        searchAndLoadNotes();
+    }//GEN-LAST:event_jButtonCariActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -538,6 +590,7 @@ String format = "";
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton jButtonCari;
     private javax.swing.JButton jButtonEdit;
     private javax.swing.JButton jButtonExport;
     private javax.swing.JButton jButtonHapus;
@@ -556,5 +609,6 @@ String format = "";
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTable jTableCatatan;
     private javax.swing.JTextArea jTextAreaInput;
+    private javax.swing.JTextField jTextFieldCari;
     // End of variables declaration//GEN-END:variables
 }
