@@ -68,7 +68,6 @@
                           <EmptySpace pref="29" max="32767" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="jRadioButtonConvertCsv" min="-2" max="-2" attributes="0"/>
-                              <Component id="jRadioButtonConvertPdf" min="-2" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="0" max="-2" attributes="0">
                                   <Component id="jComboBoxOrderWaktu" alignment="1" pref="150" max="32767" attributes="0"/>
                                   <Component id="jComboBoxKategori" alignment="1" max="32767" attributes="0"/>
@@ -133,9 +132,7 @@
                           <Component id="jComboBoxKategori" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="88" max="-2" attributes="0"/>
                           <Component id="jComboBoxOrderWaktu" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace min="-2" pref="82" max="-2" attributes="0"/>
-                          <Component id="jRadioButtonConvertPdf" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="109" max="-2" attributes="0"/>
                           <Component id="jRadioButtonConvertTxt" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="jRadioButtonConvertCsv" min="-2" max="-2" attributes="0"/>
@@ -275,11 +272,6 @@
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
           </AuxValues>
-        </Component>
-        <Component class="javax.swing.JRadioButton" name="jRadioButtonConvertPdf">
-          <Properties>
-            <Property name="text" type="java.lang.String" value=".PDF"/>
-          </Properties>
         </Component>
         <Component class="javax.swing.JRadioButton" name="jRadioButtonConvertTxt">
           <Properties>

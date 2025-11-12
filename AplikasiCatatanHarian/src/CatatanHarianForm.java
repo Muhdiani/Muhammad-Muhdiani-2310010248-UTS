@@ -48,11 +48,11 @@ private DatabaseHandler dbHandler;
     
     private void setupRadioButtons() {
     exportButtonGroup = new ButtonGroup();
-    exportButtonGroup.add(jRadioButtonConvertPdf);
+
     exportButtonGroup.add(jRadioButtonConvertTxt);
     exportButtonGroup.add(jRadioButtonConvertCsv);
     // Set default selection
-    jRadioButtonConvertPdf.setSelected(true);
+
 }
     
     /**
@@ -145,7 +145,6 @@ private void loadNotesToTable(int days) {
         jTableCatatan = new javax.swing.JTable();
         jComboBoxKategori = new javax.swing.JComboBox<>();
         jComboBoxOrderWaktu = new javax.swing.JComboBox<>();
-        jRadioButtonConvertPdf = new javax.swing.JRadioButton();
         jRadioButtonConvertTxt = new javax.swing.JRadioButton();
         jRadioButtonConvertCsv = new javax.swing.JRadioButton();
 
@@ -223,8 +222,6 @@ private void loadNotesToTable(int days) {
 
         jComboBoxOrderWaktu.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "5 hari terakhir", "10 hari terakhir", "15 hari terakhir", "20 hari terakhir" }));
 
-        jRadioButtonConvertPdf.setText(".PDF");
-
         jRadioButtonConvertTxt.setText(".TXT");
 
         jRadioButtonConvertCsv.setText(".CSV");
@@ -253,7 +250,6 @@ private void loadNotesToTable(int days) {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 29, Short.MAX_VALUE)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jRadioButtonConvertCsv)
-                            .addComponent(jRadioButtonConvertPdf)
                             .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                                 .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.Alignment.TRAILING, 0, 150, Short.MAX_VALUE)
                                 .addComponent(jComboBoxKategori, javax.swing.GroupLayout.Alignment.TRAILING, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -304,9 +300,7 @@ private void loadNotesToTable(int days) {
                         .addComponent(jComboBoxKategori, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(88, 88, 88)
                         .addComponent(jComboBoxOrderWaktu, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(82, 82, 82)
-                        .addComponent(jRadioButtonConvertPdf)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGap(109, 109, 109)
                         .addComponent(jRadioButtonConvertTxt)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jRadioButtonConvertCsv)))
@@ -442,20 +436,10 @@ private void loadNotesToTable(int days) {
         // 4. (Optional namun Direkomendasikan) Ambil Isi Penuh dari Database
         // Karena JTable hanya menampilkan cuplikan, kita perlu isi penuh.
         try {
-            // (Untuk tujuan demonstrasi, asumsikan kita punya fungsi getNoteById di DatabaseHandler)
-            // Namun, karena belum ada, kita pakai trik ini:
-            
-            // NOTE: Karena kita tidak punya fungsi getNoteById, di aplikasi nyata Anda
-            // akan menyimpan daftar Note<List<Note>> di variabel kelas
-            // atau tambahkan method getNoteById(int id) di DatabaseHandler.
-            
-            // Untuk SEMENTARA, kita asumsikan snippet di tabel cukup informatif
-            // dan set content dan category berdasarkan nilai tabel.
+
             jTextAreaInput.setText(snippet);
             jComboBoxKategori.setSelectedItem(category);
-            
-            // Setelah catatan dimuat, tombol 'TAMBAH' harus menjadi 'PERBARUI' (Update)
-            jButtonTambah.setText("PERBARUI"); 
+
             
         } catch (Exception e) {
              System.err.println("Gagal memuat detail catatan: " + e.getMessage());
@@ -471,10 +455,8 @@ String format = "";
         format = "TXT";
     } else if (jRadioButtonConvertCsv.isSelected()) {
         format = "CSV";
-    } else if (jRadioButtonConvertPdf.isSelected()) {
-        format = "PDF"; // Format ini akan ditangani secara terpisah oleh ExportHandler
     } else {
-        JOptionPane.showMessageDialog(this, "Pilih salah satu format ekspor (PDF, TXT, atau CSV).", "Peringatan", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(this, "Pilih salah satu format ekspor (TXT atau CSV).", "Peringatan", JOptionPane.WARNING_MESSAGE);
         return;
     }
     
@@ -569,7 +551,6 @@ String format = "";
     private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JRadioButton jRadioButtonConvertCsv;
-    private javax.swing.JRadioButton jRadioButtonConvertPdf;
     private javax.swing.JRadioButton jRadioButtonConvertTxt;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
